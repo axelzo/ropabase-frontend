@@ -1,30 +1,74 @@
-'use client';
+"use client";
 
-import { useEffect, useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { getClothingItems, addClothingItem, updateClothingItem, deleteClothingItem } from '@/lib/api';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getClothingItems,
+  addClothingItem,
+  updateClothingItem,
+  deleteClothingItem,
+} from "@/lib/api";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Image from 'next/image';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'; // Assuming you have a Dialog component
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"; // Assuming you have a Dialog component
 
 // Define the type for a clothing item based on your schema
-interface ClothingItem {
-  id: string; // Changed to string to match potential UUIDs from DB
+export interface ClothingItem {
+  // --- Campos de Mongoose/MongoDB ---
+  _id: string; // Identificador único de MongoDB (ObjectId serializado a string)
+  __v: number; // Número de versión de Mongoose
+
+  // --- Campos de Mongoose (Timestamps) ---
+  createdAt: string; // Fecha de creación (Mongoose Date serializado a string ISO 8601)
+  updatedAt: string; // Fecha de última actualización (Mongoose Date serializado a string ISO 8601)
+
+  // --- Campos de la Aplicación ---
   name: string;
-  category: string;
+  brand: string;
+  category: "SHIRT" | "PANTS" | "SHOES" | "JACKET" | "ACCESSORY" | "OTHER"; // Puedes usar uniones literales si tienes un `enum` en Mongoose, si no, usa solo string.
   color: string;
-  brand?: string | null;
-  imageUrl?: string | null;
+  imageUrl: string;
+  owner: string; // Referencia al ObjectId del usuario (serializado a string)
+
+  // Agrega aquí cualquier otro campo que tu esquema de Mongoose tenga
+  // Ejemplo:
+  // size: string;
 }
 
-const ClothingCategory = ['SHIRT', 'PANTS', 'SHOES', 'JACKET', 'ACCESSORY', 'OTHER'];
+const ClothingCategory = [
+  "SHIRT",
+  "PANTS",
+  "SHOES",
+  "JACKET",
+  "ACCESSORY",
+  "OTHER",
+];
 
 export default function DashboardPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [clothingItems, setClothingItems] = useState<ClothingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,12 +79,14 @@ export default function DashboardPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
     } else {
       fetchItems();
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   const fetchItems = async () => {
     try {
@@ -69,13 +115,13 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
+    if (window.confirm("Are you sure you want to delete this item?")) {
       try {
         await deleteClothingItem(id);
-        setClothingItems(clothingItems.filter(item => item.id !== id));
+        setClothingItems(clothingItems.filter((item) => item._id !== id));
       } catch (error) {
-        console.error('Failed to delete item', error);
-        alert('Failed to delete item. Please try again.');
+        console.error("Failed to delete item", error);
+        alert("Failed to delete item. Please try again.");
       }
     }
   };
@@ -93,37 +139,45 @@ export default function DashboardPage() {
     const formData = new FormData(event.currentTarget);
 
     try {
-      const updatedItem = await updateClothingItem(selectedItem.id, formData);
-      setClothingItems(clothingItems.map(item => item.id === selectedItem.id ? updatedItem : item));
+      const updatedItem = await updateClothingItem(selectedItem._id, formData);
+      setClothingItems(
+        clothingItems.map((item) =>
+          item._id === selectedItem._id ? updatedItem : item
+        )
+      );
       setIsModalOpen(false);
       setSelectedItem(null);
       setImagePreview(null);
     } catch (error) {
-      console.error('Failed to update item', error);
-      alert('Failed to update item. Please try again.');
+      console.error("Failed to update item", error);
+      alert("Failed to update item. Please try again.");
     }
   };
 
   const getImageUrl = (path: string | null) => {
-    if (!path) return '';
-    const normalizedPath = path.replace(/\\/g, '/');
-    if (normalizedPath.startsWith('blob:')) {
+    if (!path) return "";
+    const normalizedPath = path.replace(/\\/g, "/");
+    if (normalizedPath.startsWith("blob:")) {
       return normalizedPath;
     }
     // Use the environment variable for the base URL
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    return `${baseUrl}/${normalizedPath}`;
+    const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+    const cleanPath = normalizedPath.replace(/^\/+/, "");
+    return `${baseUrl}/${cleanPath}`;
   };
 
   if (isLoading) {
     return <div className="container mx-auto py-8">Loading...</div>;
   }
 
+  console.log("RopaBase Dashboard loaded");
+  console.log("Clothing items:", clothingItems);
+
   return (
     <>
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-8">Your Wardrobe</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="md:col-span-1">
             <Card>
@@ -132,7 +186,11 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAddItem} className="flex flex-col gap-4">
-                  <Input name="name" placeholder="Item Name (e.g., Blue T-Shirt)" required />
+                  <Input
+                    name="name"
+                    placeholder="Item Name (e.g., Blue T-Shirt)"
+                    required
+                  />
                   <Select name="category" required>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a category" />
@@ -145,7 +203,11 @@ export default function DashboardPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input name="color" placeholder="Color (e.g., Blue)" required />
+                  <Input
+                    name="color"
+                    placeholder="Color (e.g., Blue)"
+                    required
+                  />
                   <Input name="brand" placeholder="Brand (e.g., Nike)" />
                   <Input type="file" name="image" />
                   <Button type="submit">Add to Wardrobe</Button>
@@ -162,23 +224,49 @@ export default function DashboardPage() {
                 {clothingItems.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {clothingItems.map((item) => (
-                      <Card key={item.id}>
+                      <Card key={item._id}>
                         <CardHeader>
                           <CardTitle>{item.name}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-2">
                           {item.imageUrl && (
                             <div className="relative h-40 w-full">
-                              <Image src={getImageUrl(item.imageUrl)} alt={item.name} layout="fill" objectFit="cover" className="rounded-md" />
+                              <Image
+                                src={getImageUrl(item.imageUrl)}
+                                alt={item.name}
+                                layout="fill"
+                                objectFit="cover"
+                                className="rounded-md"
+                              />
                             </div>
                           )}
-                          <p><strong>Category:</strong> {item.category}</p>
-                          <p><strong>Color:</strong> {item.color}</p>
-                          {item.brand && <p><strong>Brand:</strong> {item.brand}</p>}
+                          <p>
+                            <strong>Category:</strong> {item.category}
+                          </p>
+                          <p>
+                            <strong>Color:</strong> {item.color}
+                          </p>
+                          {item.brand && (
+                            <p>
+                              <strong>Brand:</strong> {item.brand}
+                            </p>
+                          )}
                         </CardContent>
                         <CardFooter className="flex justify-end gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEditClick(item)}>Edit</Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>Delete</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(item)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(item._id)}
+                          >
+                            Delete
+                          </Button>
                         </CardFooter>
                       </Card>
                     ))}
@@ -193,41 +281,84 @@ export default function DashboardPage() {
       </div>
 
       {/* Edit Item Modal */}
-      <Dialog open={isModalOpen} onOpenChange={(isOpen) => {
-        setIsModalOpen(isOpen);
-        if (!isOpen) {
-          setImagePreview(null);
-        }
-      }}>
+      <Dialog
+        open={isModalOpen}
+        onOpenChange={(isOpen) => {
+          setIsModalOpen(isOpen);
+          if (!isOpen) {
+            setImagePreview(null);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Clothing Item</DialogTitle>
-            <DialogDescription>Make changes to your item here. Click save when you're done.</DialogDescription>
+            <DialogDescription>
+              Make changes to your item here. Click save when you're done.
+            </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleUpdateItem} className="flex flex-col gap-4 py-4">
-            <Input name="name" defaultValue={selectedItem?.name} placeholder="Item Name" required />
-             <Select name="category" defaultValue={selectedItem?.category} required>
-                <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                    {ClothingCategory.map((category) => (
-                        <SelectItem key={category} value={category}>
-                        {category.charAt(0) + category.slice(1).toLowerCase()}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
+          <form
+            onSubmit={handleUpdateItem}
+            className="flex flex-col gap-4 py-4"
+          >
+            <Input
+              name="name"
+              defaultValue={selectedItem?.name}
+              placeholder="Item Name"
+              required
+            />
+            <Select
+              name="category"
+              defaultValue={selectedItem?.category}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {ClothingCategory.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category.charAt(0) + category.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-            <Input name="color" defaultValue={selectedItem?.color} placeholder="Color" required />
-            <Input name="brand" defaultValue={selectedItem?.brand ?? ''} placeholder="Brand" />
-            <Input type="file" name="image" onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                setImagePreview(URL.createObjectURL(e.target.files[0]));
-              }
-            }} />
-            {imagePreview && <Image src={getImageUrl(imagePreview)} alt="Image Preview" width={100} height={100} />}
+            <Input
+              name="color"
+              defaultValue={selectedItem?.color}
+              placeholder="Color"
+              required
+            />
+            <Input
+              name="brand"
+              defaultValue={selectedItem?.brand ?? ""}
+              placeholder="Brand"
+            />
+            <Input
+              type="file"
+              name="image"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setImagePreview(URL.createObjectURL(e.target.files[0]));
+                }
+              }}
+            />
+            {imagePreview && (
+              <Image
+                src={getImageUrl(imagePreview)}
+                alt="Image Preview"
+                width={100}
+                height={100}
+              />
+            )}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>

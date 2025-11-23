@@ -1,13 +1,20 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
 // Import the specific API functions
-import { login as apiLogin, register as apiRegister } from '@/lib/api';
+import { login as apiLogin, register as apiRegister } from "@/lib/api";
 
 // Define the shape of the context data
 interface AuthContextType {
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (data: unknown) => Promise<void>;
   register: (data: unknown) => Promise<void>;
   logout: () => void;
@@ -24,64 +31,72 @@ interface AuthProviderProps {
 // Create the provider component
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     // Check for token on initial load
-    const token = localStorage.getItem('jwt_token');
+    const token = localStorage.getItem("jwt_token");
     if (token) {
       setIsAuthenticated(true);
-    console.log('[AuthContext] Token encontrado al iniciar:', token);
-    }
-    else {
+      console.log("[AuthContext] Token encontrado al iniciar:", token);
+    } else {
       setIsAuthenticated(false);
-    console.log('[AuthContext] No se encontró token al iniciar');
+      console.log("[AuthContext] No se encontró token al iniciar");
     }
+    setIsLoading(false);
   }, []);
 
   const login = async (data: unknown) => {
     try {
-        console.log('[AuthContext] Intentando login con datos:', data);
+      console.log("[AuthContext] Intentando login con datos:", data);
       // Use the imported apiLogin function
       const responseData = await apiLogin(data);
-        console.log('[AuthContext] Respuesta de login:', responseData);
+      console.log("[AuthContext] Respuesta de login:", responseData);
       if (responseData.token) {
-        localStorage.setItem('jwt_token', responseData.token);
-          console.log('[AuthContext] Token guardado en localStorage:', responseData.token);
+        localStorage.setItem("jwt_token", responseData.token);
+        console.log(
+          "[AuthContext] Token guardado en localStorage:",
+          responseData.token
+        );
         setIsAuthenticated(true);
-          console.log('[AuthContext] Usuario autenticado, redirigiendo a /dashboard');
-        router.push('/dashboard');
+        console.log(
+          "[AuthContext] Usuario autenticado, redirigiendo a /dashboard"
+        );
+        router.push("/dashboard");
       }
     } catch (error) {
-        console.error('[AuthContext] Login fallido', error);
-      alert('Login failed. Please check your credentials.');
+      console.error("[AuthContext] Login fallido", error);
+      alert("Login failed. Please check your credentials.");
     }
   };
 
   const register = async (data: unknown) => {
     try {
-    console.log('[AuthContext] Intentando registro con datos:', data);
+      console.log("[AuthContext] Intentando registro con datos:", data);
       // Use the imported apiRegister function
       await apiRegister(data);
-    console.log('[AuthContext] Registro exitoso, redirigiendo a /login');
-      router.push('/login');
+      console.log("[AuthContext] Registro exitoso, redirigiendo a /login");
+      router.push("/login");
     } catch (error) {
-    console.error('[AuthContext] Registro fallido', error);
-      alert('Registration failed. Please try again.');
+      console.error("[AuthContext] Registro fallido", error);
+      alert("Registration failed. Please try again.");
     }
   };
 
   const logout = () => {
-    console.log('[AuthContext] Logout iniciado');
-    localStorage.removeItem('jwt_token');
-    console.log('[AuthContext] Token eliminado de localStorage');
+    console.log("[AuthContext] Logout iniciado");
+    localStorage.removeItem("jwt_token");
+    console.log("[AuthContext] Token eliminado de localStorage");
     setIsAuthenticated(false);
-    console.log('[AuthContext] Usuario desautenticado, redirigiendo a /login');
-    router.push('/login');
+    console.log("[AuthContext] Usuario desautenticado, redirigiendo a /login");
+    router.push("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, isLoading, login, register, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -91,7 +106,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
