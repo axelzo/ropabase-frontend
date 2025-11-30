@@ -32,7 +32,7 @@ export default api;
 
 
 // Auth API
-export const login = async (credentials: any) => {
+export const login = async (credentials: Record<string, unknown>) => {
   console.log('[API] Intentando login con credenciales:', credentials);
   const response = await api.post('/auth/login', credentials, {
     headers: {
@@ -42,8 +42,7 @@ export const login = async (credentials: any) => {
   console.log('[API] Respuesta de login:', response.data);
   return response.data;
 };
-
-export const register = async (data: any) => {
+export const register = async (data: Record<string, unknown>) => {
   console.log('[API] Intentando registro con datos:', data);
   const response = await api.post('/auth/register', data, {
     headers: {

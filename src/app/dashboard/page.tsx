@@ -294,7 +294,7 @@ export default function DashboardPage() {
           <DialogHeader>
             <DialogTitle>Edit Clothing Item</DialogTitle>
             <DialogDescription>
-              Make changes to your item here. Click save when you're done.
+              Make changes to your item here. Click save when you&apos;re done.
             </DialogDescription>
           </DialogHeader>
           <form
