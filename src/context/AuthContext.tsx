@@ -15,8 +15,8 @@ import { login as apiLogin, register as apiRegister } from "@/lib/api";
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (data: unknown) => Promise<void>;
-  register: (data: unknown) => Promise<void>;
+  login: (data: Record<string, unknown>) => Promise<void>;
+  register: (data: Record<string, unknown>) => Promise<void>;
   logout: () => void;
 }
 
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (data: unknown) => {
+  const login = async (data: Record<string, unknown>) => {
     try {
       console.log("[AuthContext] Intentando login con datos:", data);
       // Use the imported apiLogin function
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const register = async (data: unknown) => {
+  const register = async (data: Record<string, unknown>) => {
     try {
       console.log("[AuthContext] Intentando registro con datos:", data);
       // Use the imported apiRegister function
