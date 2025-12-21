@@ -10,6 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 // Import the specific API functions
 import { login as apiLogin, register as apiRegister } from "@/lib/api";
+import { toast } from "sonner";
 
 // Define the shape of the context data
 interface AuthContextType {
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (error) {
       console.error("[AuthContext] Login fallido", error);
-      alert("Login failed. Please check your credentials.");
+      toast.error("Login failed. Please check your credentials.");
     }
   };
 
