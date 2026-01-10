@@ -127,15 +127,21 @@ export default function DashboardPage() {
   };
 
   const getImageUrl = (path: string | null) => {
-    if (!path) return "";
-    const normalizedPath = path.replace(/\\/g, "/");
-    if (normalizedPath.startsWith("blob:")) {
-      return normalizedPath;
+    if (!path) return "/placeholder.svg"; // Retorna un marcador de posición si la ruta es nula
+    
+    // Si la ruta es una URL de tipo blob (para previsualizaciones locales), úsala directamente
+    if (path.startsWith("blob:")) {
+      return path;
     }
-    // Use the environment variable for the base URL
-    const baseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
-    const cleanPath = normalizedPath.replace(/^\/+/, "");
-    return `${baseUrl}/${cleanPath}`;
+
+    // Si la ruta ya es una URL completa de Cloudinary, úsala directamente
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
+
+    // Esta parte es para rutas heredadas y puede eliminarse si todas las rutas son absolutas
+    const staticBaseUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080");
+    return `${staticBaseUrl}${path}`;
   };
 
   if (isLoading) {
@@ -256,8 +262,9 @@ export default function DashboardPage() {
                       <Image
                         src={getImageUrl(item.imageUrl)}
                         alt={item.name}
-                        layout="fill"
-                        objectFit="cover"
+                        fill
+                        unoptimized
+                        style={{ objectFit: 'cover' }}
                         className="group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
