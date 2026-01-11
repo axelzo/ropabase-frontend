@@ -29,7 +29,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Shirt, Tag, Camera, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Shirt, Tag, Camera, Upload, Loader2 } from "lucide-react";
 
 // Define the type for a clothing item based on your schema
 export interface ClothingItem {
@@ -70,8 +70,11 @@ export default function DashboardPage() {
   // State for the modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ClothingItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [addImagePreview, setAddImagePreview] = useState<string | null>(null);
   const [addCaptureMode, setAddCaptureMode] = useState<"file" | "camera">("file");
   const [editCaptureMode, setEditCaptureMode] = useState<"file" | "camera">("file");
 
@@ -88,20 +91,43 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
+  // Cleanup blob URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (addImagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(addImagePreview);
+      }
+      if (imagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [addImagePreview, imagePreview]);
+
   const handleAddItem = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     addMutation.mutate(formData, {
       onSuccess: () => {
         (event.target as HTMLFormElement).reset();
+        setAddImagePreview(null);
         setIsAddModalOpen(false);
       },
     });
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this item?")) {
-      deleteMutation.mutate(id);
+  const handleDelete = (id: string) => {
+    setItemToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete, {
+        onSuccess: () => {
+          setIsDeleteDialogOpen(false);
+          setItemToDelete(null);
+        },
+      });
     }
   };
 
@@ -170,7 +196,16 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <Dialog
+              open={isAddModalOpen}
+              onOpenChange={(isOpen) => {
+                setIsAddModalOpen(isOpen);
+                if (!isOpen) {
+                  setAddImagePreview(null);
+                  setAddCaptureMode("file");
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg hover:shadow-blue-600/20 transition-all">
                   <Plus className="w-4 h-4" /> Add New Item
@@ -194,12 +229,13 @@ export default function DashboardPage() {
                       placeholder="e.g., Blue Denim Jacket"
                       required
                       className="bg-white dark:bg-slate-950"
+                      disabled={addMutation.isPending}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Category</label>
-                      <Select name="category" required>
+                      <Select name="category" required disabled={addMutation.isPending}>
                         <SelectTrigger className="bg-white dark:bg-slate-950">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
@@ -220,6 +256,7 @@ export default function DashboardPage() {
                         placeholder="e.g., Blue"
                         required
                         className="bg-white dark:bg-slate-950"
+                        disabled={addMutation.isPending}
                       />
                     </div>
                   </div>
@@ -229,6 +266,7 @@ export default function DashboardPage() {
                       name="brand"
                       placeholder="e.g., Levi's"
                       className="bg-white dark:bg-slate-950"
+                      disabled={addMutation.isPending}
                     />
                   </div>
                   <div className="space-y-2">
@@ -240,6 +278,7 @@ export default function DashboardPage() {
                         size="sm"
                         onClick={() => setAddCaptureMode("file")}
                         className={addCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        disabled={addMutation.isPending}
                       >
                         <Upload className="w-4 h-4 mr-1" /> Upload
                       </Button>
@@ -249,6 +288,7 @@ export default function DashboardPage() {
                         size="sm"
                         onClick={() => setAddCaptureMode("camera")}
                         className={addCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        disabled={addMutation.isPending}
                       >
                         <Camera className="w-4 h-4 mr-1" /> Camera
                       </Button>
@@ -260,14 +300,40 @@ export default function DashboardPage() {
                       capture={addCaptureMode === "camera" ? "environment" : undefined}
                       key={addCaptureMode}
                       className="bg-white dark:bg-slate-950 cursor-pointer"
+                      disabled={addMutation.isPending}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setAddImagePreview(URL.createObjectURL(e.target.files[0]));
+                        }
+                      }}
                     />
                   </div>
+                  {addImagePreview && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Preview</label>
+                      <Image
+                        src={getImageUrl(addImagePreview)}
+                        alt="Image Preview"
+                        width={100}
+                        height={100}
+                        className="rounded-md border border-slate-200 dark:border-slate-800"
+                      />
+                    </div>
+                  )}
                   <DialogFooter>
                     <Button
                       type="submit"
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={addMutation.isPending}
                     >
-                      Add Item
+                      {addMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        "Add Item"
+                      )}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -400,11 +466,13 @@ export default function DashboardPage() {
               defaultValue={selectedItem?.name}
               placeholder="Item Name"
               required
+              disabled={updateMutation.isPending}
             />
             <Select
               name="category"
               defaultValue={selectedItem?.category}
               required
+              disabled={updateMutation.isPending}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
@@ -422,11 +490,13 @@ export default function DashboardPage() {
               defaultValue={selectedItem?.color}
               placeholder="Color"
               required
+              disabled={updateMutation.isPending}
             />
             <Input
               name="brand"
               defaultValue={selectedItem?.brand ?? ""}
               placeholder="Brand"
+              disabled={updateMutation.isPending}
             />
             <div className="space-y-2">
               <label className="text-sm font-medium">Image</label>
@@ -437,6 +507,7 @@ export default function DashboardPage() {
                   size="sm"
                   onClick={() => setEditCaptureMode("file")}
                   className={editCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  disabled={updateMutation.isPending}
                 >
                   <Upload className="w-4 h-4 mr-1" /> Upload
                 </Button>
@@ -446,6 +517,7 @@ export default function DashboardPage() {
                   size="sm"
                   onClick={() => setEditCaptureMode("camera")}
                   className={editCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  disabled={updateMutation.isPending}
                 >
                   <Camera className="w-4 h-4 mr-1" /> Camera
                 </Button>
@@ -456,6 +528,7 @@ export default function DashboardPage() {
                 accept="image/*"
                 capture={editCaptureMode === "camera" ? "environment" : undefined}
                 key={editCaptureMode}
+                disabled={updateMutation.isPending}
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
                     setImagePreview(URL.createObjectURL(e.target.files[0]));
@@ -476,12 +549,59 @@ export default function DashboardPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsEditModalOpen(false)}
+                disabled={updateMutation.isPending}
               >
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Item</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this item? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
