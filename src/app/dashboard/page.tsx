@@ -75,8 +75,13 @@ export default function DashboardPage() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [addImagePreview, setAddImagePreview] = useState<string | null>(null);
-  const [addCaptureMode, setAddCaptureMode] = useState<"file" | "camera">("file");
-  const [editCaptureMode, setEditCaptureMode] = useState<"file" | "camera">("file");
+  const [hasAddImage, setHasAddImage] = useState(false);
+  const [hasEditImage, setHasEditImage] = useState(false);
+
+  // Detect device type and set initial capture mode
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const [addCaptureMode, setAddCaptureMode] = useState<"file" | "camera">(isMobile ? "camera" : "file");
+  const [editCaptureMode, setEditCaptureMode] = useState<"file" | "camera">(isMobile ? "camera" : "file");
 
   // Custom hooks for data fetching and mutations
   const { data: clothingItems = [], isLoading } = useClothingItems();
@@ -110,6 +115,7 @@ export default function DashboardPage() {
       onSuccess: () => {
         (event.target as HTMLFormElement).reset();
         setAddImagePreview(null);
+        setHasAddImage(false);
         setIsAddModalOpen(false);
       },
     });
@@ -134,6 +140,7 @@ export default function DashboardPage() {
   const handleEditClick = (item: ClothingItem) => {
     setSelectedItem(item);
     setImagePreview(item.imageUrl ?? null);
+    setHasEditImage(!!item.imageUrl);
     setIsEditModalOpen(true);
   };
 
@@ -149,6 +156,7 @@ export default function DashboardPage() {
           setIsEditModalOpen(false);
           setSelectedItem(null);
           setImagePreview(null);
+          setHasEditImage(false);
         },
       }
     );
@@ -202,7 +210,8 @@ export default function DashboardPage() {
                 setIsAddModalOpen(isOpen);
                 if (!isOpen) {
                   setAddImagePreview(null);
-                  setAddCaptureMode("file");
+                  setHasAddImage(false);
+                  setAddCaptureMode(isMobile ? "camera" : "file");
                 }
               }}
             >
@@ -220,77 +229,35 @@ export default function DashboardPage() {
                 </DialogHeader>
                 <form
                   onSubmit={handleAddItem}
-                  className="flex flex-col gap-4 py-4"
+                  className="flex flex-col gap-5 py-4"
                 >
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Name</label>
-                    <Input
-                      name="name"
-                      placeholder="e.g., Blue Denim Jacket"
-                      required
-                      className="bg-white dark:bg-slate-950"
-                      disabled={addMutation.isPending}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Category</label>
-                      <Select name="category" required disabled={addMutation.isPending}>
-                        <SelectTrigger className="bg-white dark:bg-slate-950">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ClothingCategory.map((category) => (
-                            <SelectItem key={category} value={category}>
-                              {category.charAt(0) +
-                                category.slice(1).toLowerCase()}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Color</label>
-                      <Input
-                        name="color"
-                        placeholder="e.g., Blue"
-                        required
-                        className="bg-white dark:bg-slate-950"
-                        disabled={addMutation.isPending}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Brand</label>
-                    <Input
-                      name="brand"
-                      placeholder="e.g., Levi's"
-                      className="bg-white dark:bg-slate-950"
-                      disabled={addMutation.isPending}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Image</label>
-                    <div className="flex gap-2 mb-2">
+                  {/* Image First */}
+                  <div className="space-y-2.5">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 text-center block">
+                      Image *
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
                       <Button
                         type="button"
                         variant={addCaptureMode === "file" ? "default" : "outline"}
-                        size="sm"
+                        size="lg"
                         onClick={() => setAddCaptureMode("file")}
-                        className={addCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        className={`h-12 ${addCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                         disabled={addMutation.isPending}
                       >
-                        <Upload className="w-4 h-4 mr-1" /> Upload
+                        <Upload className="w-5 h-5 mr-2" />
+                        Upload
                       </Button>
                       <Button
                         type="button"
                         variant={addCaptureMode === "camera" ? "default" : "outline"}
-                        size="sm"
+                        size="lg"
                         onClick={() => setAddCaptureMode("camera")}
-                        className={addCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                        className={`h-12 ${addCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                         disabled={addMutation.isPending}
                       >
-                        <Camera className="w-4 h-4 mr-1" /> Camera
+                        <Camera className="w-5 h-5 mr-2" />
+                        Camera
                       </Button>
                     </div>
                     <Input
@@ -301,34 +268,107 @@ export default function DashboardPage() {
                       key={addCaptureMode}
                       className="bg-white dark:bg-slate-950 cursor-pointer"
                       disabled={addMutation.isPending}
+                      required
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           setAddImagePreview(URL.createObjectURL(e.target.files[0]));
+                          setHasAddImage(true);
+                        } else {
+                          setHasAddImage(false);
                         }
                       }}
                     />
                   </div>
                   {addImagePreview && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Preview</label>
-                      <Image
-                        src={getImageUrl(addImagePreview)}
-                        alt="Image Preview"
-                        width={100}
-                        height={100}
-                        className="rounded-md border border-slate-200 dark:border-slate-800"
-                      />
+                    <div className="space-y-2.5">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 text-center block">
+                        Preview
+                      </label>
+                      <div className="flex justify-center">
+                        <div className="relative w-48 h-48 rounded-lg border-2 border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                          <Image
+                            src={getImageUrl(addImagePreview)}
+                            alt="Image Preview"
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            className="rounded-lg"
+                          />
+                        </div>
+                      </div>
                     </div>
                   )}
-                  <DialogFooter>
+
+                  {/* Other Fields - only show if image is selected */}
+                  {hasAddImage && (
+                    <>
+                      <div className="space-y-2.5">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          Name *
+                        </label>
+                        <Input
+                          name="name"
+                          placeholder="e.g., Blue Denim Jacket"
+                          required
+                          className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                          disabled={addMutation.isPending}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2.5">
+                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            Category *
+                          </label>
+                          <Select name="category" required disabled={addMutation.isPending}>
+                            <SelectTrigger className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ClothingCategory.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category.charAt(0) +
+                                    category.slice(1).toLowerCase()}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2.5">
+                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            Color *
+                          </label>
+                          <Input
+                            name="color"
+                            placeholder="e.g., Blue"
+                            required
+                            className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                            disabled={addMutation.isPending}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2.5">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          Brand
+                        </label>
+                        <Input
+                          name="brand"
+                          placeholder="e.g., Levi's"
+                          className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                          disabled={addMutation.isPending}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <DialogFooter className="pt-2">
                     <Button
                       type="submit"
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={addMutation.isPending}
+                      size="lg"
+                      className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
+                      disabled={addMutation.isPending || !hasAddImage}
                     >
                       {addMutation.isPending ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                           Adding...
                         </>
                       ) : (
@@ -447,6 +487,8 @@ export default function DashboardPage() {
           setIsEditModalOpen(isOpen);
           if (!isOpen) {
             setImagePreview(null);
+            setHasEditImage(false);
+            setEditCaptureMode(isMobile ? "camera" : "file");
           }
         }}
       >
@@ -498,28 +540,30 @@ export default function DashboardPage() {
               placeholder="Brand"
               disabled={updateMutation.isPending}
             />
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Image</label>
-              <div className="flex gap-2 mb-2">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-center block">Image</label>
+              <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
                   variant={editCaptureMode === "file" ? "default" : "outline"}
-                  size="sm"
+                  size="lg"
                   onClick={() => setEditCaptureMode("file")}
-                  className={editCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  className={`h-12 ${editCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                   disabled={updateMutation.isPending}
                 >
-                  <Upload className="w-4 h-4 mr-1" /> Upload
+                  <Upload className="w-5 h-5 mr-2" />
+                  Upload
                 </Button>
                 <Button
                   type="button"
                   variant={editCaptureMode === "camera" ? "default" : "outline"}
-                  size="sm"
+                  size="lg"
                   onClick={() => setEditCaptureMode("camera")}
-                  className={editCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                  className={`h-12 ${editCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                   disabled={updateMutation.isPending}
                 >
-                  <Camera className="w-4 h-4 mr-1" /> Camera
+                  <Camera className="w-5 h-5 mr-2" />
+                  Camera
                 </Button>
               </div>
               <Input
@@ -532,17 +576,29 @@ export default function DashboardPage() {
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
                     setImagePreview(URL.createObjectURL(e.target.files[0]));
+                    setHasEditImage(true);
+                  } else {
+                    // If cleared, check if there's an original image
+                    setHasEditImage(!!selectedItem?.imageUrl);
                   }
                 }}
               />
             </div>
             {imagePreview && (
-              <Image
-                src={getImageUrl(imagePreview)}
-                alt="Image Preview"
-                width={100}
-                height={100}
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-center block">Preview</label>
+                <div className="flex justify-center">
+                  <div className="relative w-48 h-48 rounded-lg border-2 border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                    <Image
+                      src={getImageUrl(imagePreview)}
+                      alt="Image Preview"
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      className="rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
             )}
             <DialogFooter>
               <Button
@@ -553,7 +609,7 @@ export default function DashboardPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
+              <Button type="submit" disabled={updateMutation.isPending || !hasEditImage}>
                 {updateMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
