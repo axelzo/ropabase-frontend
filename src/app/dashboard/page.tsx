@@ -29,7 +29,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Shirt, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, Shirt, Tag, Camera, Upload } from "lucide-react";
 
 // Define the type for a clothing item based on your schema
 export interface ClothingItem {
@@ -72,6 +72,8 @@ export default function DashboardPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ClothingItem | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [addCaptureMode, setAddCaptureMode] = useState<"file" | "camera">("file");
+  const [editCaptureMode, setEditCaptureMode] = useState<"file" | "camera">("file");
 
   // Custom hooks for data fetching and mutations
   const { data: clothingItems = [], isLoading } = useClothingItems();
@@ -231,9 +233,32 @@ export default function DashboardPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Image</label>
+                    <div className="flex gap-2 mb-2">
+                      <Button
+                        type="button"
+                        variant={addCaptureMode === "file" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setAddCaptureMode("file")}
+                        className={addCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                      >
+                        <Upload className="w-4 h-4 mr-1" /> Upload
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={addCaptureMode === "camera" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setAddCaptureMode("camera")}
+                        className={addCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                      >
+                        <Camera className="w-4 h-4 mr-1" /> Camera
+                      </Button>
+                    </div>
                     <Input
                       type="file"
                       name="image"
+                      accept="image/*"
+                      capture={addCaptureMode === "camera" ? "environment" : undefined}
+                      key={addCaptureMode}
                       className="bg-white dark:bg-slate-950 cursor-pointer"
                     />
                   </div>
@@ -403,15 +428,41 @@ export default function DashboardPage() {
               defaultValue={selectedItem?.brand ?? ""}
               placeholder="Brand"
             />
-            <Input
-              type="file"
-              name="image"
-              onChange={(e) => {
-                if (e.target.files && e.target.files[0]) {
-                  setImagePreview(URL.createObjectURL(e.target.files[0]));
-                }
-              }}
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Image</label>
+              <div className="flex gap-2 mb-2">
+                <Button
+                  type="button"
+                  variant={editCaptureMode === "file" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEditCaptureMode("file")}
+                  className={editCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                >
+                  <Upload className="w-4 h-4 mr-1" /> Upload
+                </Button>
+                <Button
+                  type="button"
+                  variant={editCaptureMode === "camera" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEditCaptureMode("camera")}
+                  className={editCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700" : ""}
+                >
+                  <Camera className="w-4 h-4 mr-1" /> Camera
+                </Button>
+              </div>
+              <Input
+                type="file"
+                name="image"
+                accept="image/*"
+                capture={editCaptureMode === "camera" ? "environment" : undefined}
+                key={editCaptureMode}
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setImagePreview(URL.createObjectURL(e.target.files[0]));
+                  }
+                }}
+              />
+            </div>
             {imagePreview && (
               <Image
                 src={getImageUrl(imagePreview)}
