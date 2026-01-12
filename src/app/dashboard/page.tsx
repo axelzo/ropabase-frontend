@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -82,6 +82,10 @@ export default function DashboardPage() {
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   const [addCaptureMode, setAddCaptureMode] = useState<"file" | "camera">(isMobile ? "camera" : "file");
   const [editCaptureMode, setEditCaptureMode] = useState<"file" | "camera">(isMobile ? "camera" : "file");
+
+  // Refs for file inputs
+  const addFileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   // Custom hooks for data fetching and mutations
   const { data: clothingItems = [], isLoading } = useClothingItems();
@@ -220,7 +224,7 @@ export default function DashboardPage() {
                   <Plus className="w-4 h-4" /> Add New Item
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Add New Clothing</DialogTitle>
                   <DialogDescription>
@@ -229,7 +233,7 @@ export default function DashboardPage() {
                 </DialogHeader>
                 <form
                   onSubmit={handleAddItem}
-                  className="flex flex-col gap-5 py-4"
+                  className="flex flex-col gap-5 py-4 overflow-y-auto flex-1"
                 >
                   {/* Image First */}
                   <div className="space-y-2.5">
@@ -241,7 +245,10 @@ export default function DashboardPage() {
                         type="button"
                         variant={addCaptureMode === "file" ? "default" : "outline"}
                         size="lg"
-                        onClick={() => setAddCaptureMode("file")}
+                        onClick={() => {
+                          setAddCaptureMode("file");
+                          setTimeout(() => addFileInputRef.current?.click(), 100);
+                        }}
                         className={`h-12 ${addCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                         disabled={addMutation.isPending}
                       >
@@ -252,7 +259,10 @@ export default function DashboardPage() {
                         type="button"
                         variant={addCaptureMode === "camera" ? "default" : "outline"}
                         size="lg"
-                        onClick={() => setAddCaptureMode("camera")}
+                        onClick={() => {
+                          setAddCaptureMode("camera");
+                          setTimeout(() => addFileInputRef.current?.click(), 100);
+                        }}
                         className={`h-12 ${addCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                         disabled={addMutation.isPending}
                       >
@@ -261,12 +271,13 @@ export default function DashboardPage() {
                       </Button>
                     </div>
                     <Input
+                      ref={addFileInputRef}
                       type="file"
                       name="image"
                       accept="image/*"
                       capture={addCaptureMode === "camera" ? "environment" : undefined}
                       key={addCaptureMode}
-                      className="bg-white dark:bg-slate-950 cursor-pointer"
+                      className="hidden"
                       disabled={addMutation.isPending}
                       required
                       onChange={(e) => {
@@ -492,7 +503,7 @@ export default function DashboardPage() {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Edit Clothing Item</DialogTitle>
             <DialogDescription>
@@ -501,7 +512,7 @@ export default function DashboardPage() {
           </DialogHeader>
           <form
             onSubmit={handleUpdateItem}
-            className="flex flex-col gap-4 py-4"
+            className="flex flex-col gap-4 py-4 overflow-y-auto flex-1"
           >
             <Input
               name="name"
@@ -547,7 +558,10 @@ export default function DashboardPage() {
                   type="button"
                   variant={editCaptureMode === "file" ? "default" : "outline"}
                   size="lg"
-                  onClick={() => setEditCaptureMode("file")}
+                  onClick={() => {
+                    setEditCaptureMode("file");
+                    setTimeout(() => editFileInputRef.current?.click(), 100);
+                  }}
                   className={`h-12 ${editCaptureMode === "file" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                   disabled={updateMutation.isPending}
                 >
@@ -558,7 +572,10 @@ export default function DashboardPage() {
                   type="button"
                   variant={editCaptureMode === "camera" ? "default" : "outline"}
                   size="lg"
-                  onClick={() => setEditCaptureMode("camera")}
+                  onClick={() => {
+                    setEditCaptureMode("camera");
+                    setTimeout(() => editFileInputRef.current?.click(), 100);
+                  }}
                   className={`h-12 ${editCaptureMode === "camera" ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
                   disabled={updateMutation.isPending}
                 >
@@ -567,11 +584,13 @@ export default function DashboardPage() {
                 </Button>
               </div>
               <Input
+                ref={editFileInputRef}
                 type="file"
                 name="image"
                 accept="image/*"
                 capture={editCaptureMode === "camera" ? "environment" : undefined}
                 key={editCaptureMode}
+                className="hidden"
                 disabled={updateMutation.isPending}
                 onChange={(e) => {
                   if (e.target.files && e.target.files[0]) {
