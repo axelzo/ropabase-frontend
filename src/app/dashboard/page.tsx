@@ -32,6 +32,12 @@ import {
 import { Plus, Pencil, Trash2, Shirt, Tag, Camera, Upload, Loader2 } from "lucide-react";
 import { ClothingFilterBar } from "@/components/clothing/ClothingFilterBar";
 import { useClothingFilters } from "@/hooks/clothing/useClothingFilters";
+import {
+  CLOTHING_CATEGORIES,
+  COMMON_COLORS,
+  COLOR_HEX_MAP,
+  formatCategory,
+} from "@/lib/constants";
 
 // Define the type for a clothing item based on your schema
 export interface ClothingItem {
@@ -56,15 +62,6 @@ export interface ClothingItem {
   // size: string;
 }
 
-const ClothingCategory = [
-  "SHIRT",
-  "PANTS",
-  "SHOES",
-  "JACKET",
-  "ACCESSORY",
-  "OTHER",
-];
-
 export default function DashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -79,6 +76,8 @@ export default function DashboardPage() {
   const [addImagePreview, setAddImagePreview] = useState<string | null>(null);
   const [hasAddImage, setHasAddImage] = useState(false);
   const [hasEditImage, setHasEditImage] = useState(false);
+  const [addCategory, setAddCategory] = useState("");
+  const [addColor, setAddColor] = useState("");
 
   // Detect device type and set initial capture mode
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -133,6 +132,8 @@ export default function DashboardPage() {
         (event.target as HTMLFormElement).reset();
         setAddImagePreview(null);
         setHasAddImage(false);
+        setAddCategory("");
+        setAddColor("");
         setIsAddModalOpen(false);
       },
     });
@@ -229,6 +230,8 @@ export default function DashboardPage() {
                   setAddImagePreview(null);
                   setHasAddImage(false);
                   setAddCaptureMode(isMobile ? "camera" : "file");
+                  setAddCategory("");
+                  setAddColor("");
                 }
               }}
             >
@@ -337,37 +340,64 @@ export default function DashboardPage() {
                           disabled={addMutation.isPending}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2.5">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                            Category *
-                          </label>
-                          <Select name="category" required disabled={addMutation.isPending}>
-                            <SelectTrigger className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700">
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ClothingCategory.map((category) => (
-                                <SelectItem key={category} value={category}>
-                                  {category.charAt(0) +
-                                    category.slice(1).toLowerCase()}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      <div className="space-y-2.5">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          Category *
+                        </label>
+                        <input type="hidden" name="category" value={addCategory} />
+                        <div className="flex flex-wrap gap-2">
+                          {CLOTHING_CATEGORIES.map((cat) => {
+                            const isSelected = addCategory === cat;
+                            return (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => setAddCategory(isSelected ? "" : cat)}
+                                aria-pressed={isSelected}
+                                disabled={addMutation.isPending}
+                                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                                  isSelected
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                }`}
+                              >
+                                {formatCategory(cat)}
+                              </button>
+                            );
+                          })}
                         </div>
-                        <div className="space-y-2.5">
-                          <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                            Color *
-                          </label>
-                          <Input
-                            name="color"
-                            placeholder="e.g., Blue"
-                            required
-                            className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
-                            disabled={addMutation.isPending}
-                          />
-                        </div>
+                      </div>
+                      <div className="space-y-2.5">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          Color *
+                        </label>
+                        <Select
+                          name="color"
+                          value={addColor}
+                          onValueChange={setAddColor}
+                          disabled={addMutation.isPending}
+                        >
+                          <SelectTrigger className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700">
+                            <SelectValue placeholder="Select color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COMMON_COLORS.map((color) => (
+                              <SelectItem key={color} value={color}>
+                                <span className="flex items-center gap-2">
+                                  <span
+                                    className={`w-3 h-3 rounded-full inline-block ${
+                                      color === "White" || color === "Beige" || color === "Yellow"
+                                        ? "border border-slate-300 dark:border-slate-600"
+                                        : ""
+                                    }`}
+                                    style={{ backgroundColor: COLOR_HEX_MAP[color] }}
+                                  />
+                                  {color}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2.5">
                         <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -388,7 +418,7 @@ export default function DashboardPage() {
                       type="submit"
                       size="lg"
                       className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm"
-                      disabled={addMutation.isPending || !hasAddImage}
+                      disabled={addMutation.isPending || !hasAddImage || !addCategory || !addColor}
                     >
                       {addMutation.isPending ? (
                         <>
@@ -555,47 +585,102 @@ export default function DashboardPage() {
           </DialogHeader>
           <form
             onSubmit={handleUpdateItem}
-            className="flex flex-col gap-4 py-4 overflow-y-auto flex-1"
+            className="flex flex-col gap-5 py-4 overflow-y-auto flex-1"
           >
-            <Input
-              name="name"
-              defaultValue={selectedItem?.name}
-              placeholder="Item Name"
-              required
-              disabled={updateMutation.isPending}
-            />
-            <Select
-              name="category"
-              defaultValue={selectedItem?.category}
-              required
-              disabled={updateMutation.isPending}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {ClothingCategory.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category.charAt(0) + category.slice(1).toLowerCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              name="color"
-              defaultValue={selectedItem?.color}
-              placeholder="Color"
-              required
-              disabled={updateMutation.isPending}
-            />
-            <Input
-              name="brand"
-              defaultValue={selectedItem?.brand ?? ""}
-              placeholder="Brand"
-              disabled={updateMutation.isPending}
-            />
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-center block">Image</label>
+            <div className="space-y-2.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Name *
+              </label>
+              <Input
+                name="name"
+                defaultValue={selectedItem?.name}
+                placeholder="Item Name"
+                required
+                className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                disabled={updateMutation.isPending}
+              />
+            </div>
+            <div className="space-y-2.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Category *
+              </label>
+              <input type="hidden" name="category" value={selectedItem?.category ?? ""} />
+              <div className="flex flex-wrap gap-2">
+                {CLOTHING_CATEGORIES.map((cat) => {
+                  const isSelected = selectedItem?.category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() =>
+                        setSelectedItem((prev) =>
+                          prev ? { ...prev, category: cat } : prev
+                        )
+                      }
+                      aria-pressed={isSelected}
+                      disabled={updateMutation.isPending}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                        isSelected
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      }`}
+                    >
+                      {formatCategory(cat)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-2.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Color *
+              </label>
+              <Select
+                name="color"
+                value={selectedItem?.color ?? ""}
+                onValueChange={(value) =>
+                  setSelectedItem((prev) =>
+                    prev ? { ...prev, color: value } : prev
+                  )
+                }
+                disabled={updateMutation.isPending}
+              >
+                <SelectTrigger className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700">
+                  <SelectValue placeholder="Select color" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMMON_COLORS.map((color) => (
+                    <SelectItem key={color} value={color}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className={`w-3 h-3 rounded-full inline-block ${
+                            color === "White" || color === "Beige" || color === "Yellow"
+                              ? "border border-slate-300 dark:border-slate-600"
+                              : ""
+                          }`}
+                          style={{ backgroundColor: COLOR_HEX_MAP[color] }}
+                        />
+                        {color}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Brand
+              </label>
+              <Input
+                name="brand"
+                defaultValue={selectedItem?.brand ?? ""}
+                placeholder="Brand"
+                className="h-11 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                disabled={updateMutation.isPending}
+              />
+            </div>
+            <div className="space-y-2.5">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 text-center block">Image</label>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
@@ -671,7 +756,7 @@ export default function DashboardPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={updateMutation.isPending || !hasEditImage}>
+              <Button type="submit" disabled={updateMutation.isPending || !hasEditImage || !selectedItem?.category || !selectedItem?.color}>
                 {updateMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

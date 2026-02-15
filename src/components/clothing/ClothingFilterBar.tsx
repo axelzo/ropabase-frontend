@@ -13,6 +13,12 @@ import {
 } from "@/components/ui/drawer";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import { ClothingFilters } from "@/lib/api";
+import {
+  CLOTHING_CATEGORIES,
+  COMMON_COLORS,
+  COLOR_HEX_MAP,
+  formatCategory,
+} from "@/lib/constants";
 
 interface ClothingFilterBarProps {
   filters: ClothingFilters;
@@ -24,51 +30,6 @@ interface ClothingFilterBarProps {
   onClearFilters: () => void;
   hasActiveFilters: boolean;
   activeFilterCount: number;
-}
-
-const CLOTHING_CATEGORIES = [
-  "SHIRT",
-  "PANTS",
-  "SHOES",
-  "JACKET",
-  "ACCESSORY",
-  "OTHER",
-] as const;
-
-const COMMON_COLORS = [
-  "Black",
-  "White",
-  "Blue",
-  "Red",
-  "Green",
-  "Gray",
-  "Brown",
-  "Navy",
-  "Beige",
-  "Pink",
-  "Yellow",
-  "Orange",
-  "Purple",
-] as const;
-
-const COLOR_HEX_MAP: Record<string, string> = {
-  Black: "#000000",
-  White: "#FFFFFF",
-  Blue: "#3B82F6",
-  Red: "#EF4444",
-  Green: "#22C55E",
-  Gray: "#6B7280",
-  Brown: "#92400E",
-  Navy: "#1E3A5F",
-  Beige: "#D2B48C",
-  Pink: "#EC4899",
-  Yellow: "#EAB308",
-  Orange: "#F97316",
-  Purple: "#A855F7",
-};
-
-function formatCategory(cat: string) {
-  return cat.charAt(0) + cat.slice(1).toLowerCase();
 }
 
 export function ClothingFilterBar({
