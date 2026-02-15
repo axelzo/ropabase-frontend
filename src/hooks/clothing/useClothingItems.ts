@@ -1,15 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
-import { getClothingItems } from "@/lib/api";
+import { getClothingItems, ClothingFilters } from "@/lib/api";
 
 export const CLOTHING_QUERY_KEY = ["clothingItems"];
 
-export function useClothingItems() {
+export const getClothingQueryKey = (filters?: ClothingFilters) =>
+  ["clothingItems", filters ?? {}];
+
+export function useClothingItems(filters?: ClothingFilters) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   return useQuery({
-    queryKey: CLOTHING_QUERY_KEY,
-    queryFn: getClothingItems,
+    queryKey: getClothingQueryKey(filters),
+    queryFn: () => getClothingItems(filters),
     enabled: isAuthenticated && !authLoading,
   });
 }

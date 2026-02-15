@@ -54,8 +54,18 @@ export const register = async (data: Record<string, unknown>) => {
 };
 
 // Clothing API
-export const getClothingItems = async () => {
-  const response = await api.get('/clothing');
+export interface ClothingFilters {
+  category?: string;
+  brand?: string;
+  color?: string;
+  name?: string;
+}
+
+export const getClothingItems = async (filters?: ClothingFilters) => {
+  const cleanFilters = filters
+    ? Object.fromEntries(Object.entries(filters).filter(([, v]) => v))
+    : {};
+  const response = await api.get('/clothing', { params: cleanFilters });
   return response.data;
 };
 
@@ -81,3 +91,21 @@ export const deleteClothingItem = async (id: string) => {
   const response = await api.delete(`/clothing/${id}`);
   return response.data;
 };
+
+
+
+const a = {
+  user_name: 'axel',
+  password: '12345678',
+  address: 'Calle Falsa 123',
+  phone_number: '1234567890',
+  email: 'axel@example.com',
+}
+const b = {
+  user_name: 'maria',
+  password: 'password123',
+  address: 'Avenida Principal 456',
+  phone_number: '9876543210',
+  email: 'maria@example.com',
+};
+

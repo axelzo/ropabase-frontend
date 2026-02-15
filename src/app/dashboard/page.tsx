@@ -30,6 +30,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Shirt, Tag, Camera, Upload, Loader2 } from "lucide-react";
+import { ClothingFilterBar } from "@/components/clothing/ClothingFilterBar";
+import { useClothingFilters } from "@/hooks/clothing/useClothingFilters";
 
 // Define the type for a clothing item based on your schema
 export interface ClothingItem {
@@ -87,8 +89,19 @@ export default function DashboardPage() {
   const addFileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Filter state
+  const {
+    filters,
+    debouncedFilters,
+    updateFilter,
+    clearFilters,
+    removeFilter,
+    hasActiveFilters,
+    activeFilterCount,
+  } = useClothingFilters();
+
   // Custom hooks for data fetching and mutations
-  const { data: clothingItems = [], isLoading } = useClothingItems();
+  const { data: clothingItems = [], isLoading } = useClothingItems(debouncedFilters);
   const addMutation = useAddClothingItem();
   const updateMutation = useUpdateClothingItem();
   const deleteMutation = useDeleteClothingItem();
@@ -392,6 +405,16 @@ export default function DashboardPage() {
             </Dialog>
           </div>
 
+          {/* Filter Bar */}
+          <ClothingFilterBar
+            filters={filters}
+            onFilterChange={updateFilter}
+            onRemoveFilter={removeFilter}
+            onClearFilters={clearFilters}
+            hasActiveFilters={hasActiveFilters}
+            activeFilterCount={activeFilterCount}
+          />
+
           {clothingItems.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {clothingItems.map((item: ClothingItem) => (
@@ -473,19 +496,39 @@ export default function DashboardPage() {
               <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-full mb-4">
                 <Shirt className="w-8 h-8 text-slate-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Your wardrobe is empty
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
-                Start building your digital closet by adding your first clothing
-                item.
-              </p>
-              <Button
-                onClick={() => setIsAddModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Add First Item
-              </Button>
+              {hasActiveFilters ? (
+                <>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    No items match your filters
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
+                    Try adjusting your search or filters to find what you&apos;re looking for.
+                  </p>
+                  <Button
+                    onClick={clearFilters}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    Clear Filters
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Your wardrobe is empty
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 max-w-sm mt-1 mb-6">
+                    Start building your digital closet by adding your first clothing
+                    item.
+                  </p>
+                  <Button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Add First Item
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>
