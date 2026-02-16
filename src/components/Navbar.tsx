@@ -3,6 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
+import { LogOut } from "lucide-react";
 
 export default function Navbar() {
   const { isAuthenticated, logout } = useAuth();
@@ -26,6 +27,12 @@ export default function Navbar() {
           {!isAuthenticated ? (
             <>
               <Link
+                href="/about"
+                className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                About
+              </Link>
+              <Link
                 href="/login"
                 className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
@@ -39,20 +46,13 @@ export default function Navbar() {
               </Link>
             </>
           ) : (
-            <>
-              <Link
-                href="/dashboard"
-                className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={logout}
-                className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300"
-              >
-                Log Out
-              </button>
-            </>
+            <button
+              onClick={logout}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2 sm:px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-300"
+            >
+              <LogOut className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Log Out</span>
+            </button>
           )}
         </nav>
       </div>

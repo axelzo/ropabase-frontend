@@ -62,9 +62,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         );
         setIsAuthenticated(true);
         console.log(
-          "[AuthContext] Usuario autenticado, redirigiendo a /dashboard"
+          "[AuthContext] Usuario autenticado, redirigiendo a /"
         );
-        router.push("/dashboard");
+        router.push("/");
       }
     } catch (error) {
       console.error("[AuthContext] Login fallido", error);
