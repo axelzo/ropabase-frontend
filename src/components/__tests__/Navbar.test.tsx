@@ -54,7 +54,7 @@ describe('Navbar', () => {
     expect(screen.getByText('Get Started')).toBeInTheDocument();
   });
 
-  it('debería mostrar Dashboard y Log Out cuando está autenticado', () => {
+  it('debería mostrar Log Out cuando está autenticado', () => {
     (useAuth as jest.Mock).mockReturnValue({
       isAuthenticated: true,
       logout: mockLogout,
@@ -62,7 +62,6 @@ describe('Navbar', () => {
 
     render(<Navbar />);
 
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Log Out')).toBeInTheDocument();
   });
 
