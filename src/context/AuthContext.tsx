@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       await apiLogin(data); // El servidor setea las cookies en la respuesta
       setIsAuthenticated(true);
       console.log("[AuthContext] Login exitoso, redirigiendo a /dashboard");
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       console.error("[AuthContext] Login fallido", error);
       toast.error("Login failed. Please check your credentials.");
